@@ -51,7 +51,7 @@ const ImageGallery = ({ searchTerm }) => {
       setLoading(true);
       setPage(1);
     };
-  }, [searchTerm, page, fetchImages]);
+  }, [searchTerm, page]);
 
   const openModal = useCallback((image) => {
     setShowModal(true);
