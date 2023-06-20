@@ -7,6 +7,17 @@ import Loader from './Loader';
 import Modal from './Modal'; 
 import styles from './styles.module.css';
 
+const fetchImages = async (searchTerm, page) => {
+  try {
+    const response = await axios.get(
+      `https://pixabay.com/api/?q=${searchTerm}&page=${page}&key=35513783-cdd32f526a75b86a8cfb6c8f5&image_type=photo&orientation=horizontal&per_page=12`
+    );
+    return response.data.hits;
+  } catch (error) {
+    console.log(error);
+    return [];
+  }
+};
 
 const ImageGallery = ({ searchTerm }) => {
   const [images, setImages] = useState([]);
@@ -16,35 +27,31 @@ const ImageGallery = ({ searchTerm }) => {
   const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
-    fetchImages();
+    const fetchData = async () => {
+      if (!searchTerm) {
+        setImages([]);
+        setLoading(false);
+        return;
+      }
 
+      try {
+        setLoading(true);
+        const newImages = await fetchImages(searchTerm, page);
+        setImages((prevImages) => [...prevImages, ...newImages]);
+        setLoading(false);
+        setPage((prevPage) => prevPage + 1);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchData();
     return () => {
       setImages([]);
       setLoading(true);
       setPage(1);
     };
-  }, [searchTerm]);
-
-  const fetchImages = useCallback(async () => {
-    if (!searchTerm) {
-      setImages([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `https://pixabay.com/api/?q=${searchTerm}&page=${page}&key=35513783-cdd32f526a75b86a8cfb6c8f5&image_type=photo&orientation=horizontal&per_page=12`
-      );
-      const newImages = response.data.hits;
-      setImages((prevImages) => [...prevImages, ...newImages]);
-      setLoading(false);
-      setPage((prevPage) => prevPage + 1);
-    } catch (error) {
-      console.log(error);
-    }
-  }, [searchTerm, page]);
+  }, [searchTerm, page, fetchImages]);
 
   const openModal = useCallback((image) => {
     setShowModal(true);
@@ -57,9 +64,8 @@ const ImageGallery = ({ searchTerm }) => {
   }, []);
 
   const handleLoadMore = useCallback(() => {
-    fetchImages();
-    window.scrollTo(0, document.body.scrollHeight);
-  }, [fetchImages]);
+    setPage((prevPage) => prevPage + 1);
+  }, []);
 
   return (
     <div>
@@ -82,7 +88,8 @@ const ImageGallery = ({ searchTerm }) => {
 
       {images.length > 0 && !loading && (
         <LoadMoreButton onClick={handleLoadMore}>
-          Load More</LoadMoreButton>
+          Load More
+        </LoadMoreButton>
       )}
 
       {showModal && selectedImage && (
