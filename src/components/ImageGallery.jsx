@@ -4,9 +4,8 @@ import PropTypes from 'prop-types';
 import ImageGalleryItem from './ImageGalleryItem';
 import LoadMoreButton from './LoadMoreButton';
 import Loader from './Loader';
-import Modal from './Modal'; 
+import Modal from './Modal';
 import styles from './styles.module.css';
-
 
 const ImageGallery = ({ searchTerm }) => {
   const [images, setImages] = useState([]);
@@ -14,16 +13,6 @@ const ImageGallery = ({ searchTerm }) => {
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-
-  useEffect(() => {
-    fetchImages();
-
-    return () => {
-      setImages([]);
-      setLoading(true);
-      setPage(1);
-    };
-  }, [searchTerm]);
 
   const fetchImages = useCallback(async () => {
     if (!searchTerm) {
@@ -40,11 +29,22 @@ const ImageGallery = ({ searchTerm }) => {
       const newImages = response.data.hits;
       setImages((prevImages) => [...prevImages, ...newImages]);
       setLoading(false);
-      setPage((prevPage) => prevPage + 1);
     } catch (error) {
-      console.log(error);
+      console.log(error.response.data);
+      console.log(error.response.status);
+      console.log(error.response.headers);
+      console.log(error.config);
     }
   }, [searchTerm, page]);
+
+  useEffect(() => {
+    setImages([]);
+    setPage(1);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    fetchImages();
+  }, [fetchImages]);
 
   const openModal = useCallback((image) => {
     setShowModal(true);
@@ -57,15 +57,12 @@ const ImageGallery = ({ searchTerm }) => {
   }, []);
 
   const handleLoadMore = useCallback(() => {
-    fetchImages();
-    window.scrollTo(0, document.body.scrollHeight);
-  }, [fetchImages]);
+    setPage((prevPage) => prevPage + 1);
+  }, []);
 
   return (
     <div>
-      {loading && images.length === 0 ? (
-        <Loader />
-      ) : null}
+      {loading && images.length === 0 ? <Loader /> : null}
 
       {images.length > 0 && (
         <ul className={styles.ImageGallery}>
@@ -81,12 +78,15 @@ const ImageGallery = ({ searchTerm }) => {
       )}
 
       {images.length > 0 && !loading && (
-        <LoadMoreButton onClick={handleLoadMore}>
-          Load More</LoadMoreButton>
+        <LoadMoreButton onClick={handleLoadMore}>Load More</LoadMoreButton>
       )}
 
       {showModal && selectedImage && (
-        <Modal image={selectedImage} onClose={closeModal} className={styles.Modal} />
+        <Modal
+          image={selectedImage}
+          onClose={closeModal}
+          className={styles.Modal}
+        />
       )}
     </div>
   );
